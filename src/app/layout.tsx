@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { AppProvider } from '@/providers/app-provider';
+import { TipButton } from '@/components/tip-button';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -14,9 +15,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased min-h-screen flex flex-col">
-        <AppProvider>{children}</AppProvider>
+      <body className="antialiased min-h-screen flex flex-col relative">
+        <AppProvider>
+          {children}
+          <TipButton />
+        </AppProvider>
       </body>
     </html>
   );
 }
+

@@ -1,29 +1,32 @@
 import { db } from '@/lib/db';
-import type { User, Role } from '@prisma/client';
+import type { Admin, AdminRole } from '@prisma/client';
 
-export interface CreateUserData {
+export interface CreateAdminData {
   email: string;
-  name?: string;
-  password: string;
-  role?: Role;
+  passwordHash: string;
+  role?: AdminRole;
 }
 
 export class UserRepository {
-  async findById(id: string): Promise<User | null> {
-    return db.user.findUnique({
+  async findById(id: string): Promise<Admin | null> {
+    return db.admin.findUnique({
       where: { id },
     });
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    return db.user.findUnique({
+  async findByEmail(email: string): Promise<Admin | null> {
+    return db.admin.findUnique({
       where: { email },
     });
   }
 
-  async create(data: CreateUserData): Promise<User> {
-    return db.user.create({
-      data,
+  async create(data: CreateAdminData): Promise<Admin> {
+    return db.admin.create({
+      data: {
+        email: data.email,
+        passwordHash: data.passwordHash,
+        role: data.role ?? 'MODERATOR',
+      },
     });
   }
 }

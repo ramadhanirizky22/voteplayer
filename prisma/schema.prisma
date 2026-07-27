@@ -8,19 +8,166 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-enum Role {
-  ADMIN
-  USER
+enum EntityStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+  SUSPENDED
+
+  @@map("entity_status")
 }
 
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  password  String
-  role      Role     @default(USER)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+enum AdminRole {
+  SUPER_ADMIN
+  MODERATOR
+  ANALYST
 
-  @@map("users")
+  @@map("admin_role")
+}
+
+enum VoteSource {
+  WEB
+  MOBILE_WEB
+  IOS_APP
+  ANDROID_APP
+  PARTNER_API
+
+  @@map("vote_source")
+}
+
+enum AuditAction {
+  LOGIN
+  CREATE
+  UPDATE
+  DELETE
+  PUBLISH
+  RESTORE
+
+  @@map("audit_action")
+}
+
+model Game {
+  id          String       @id @default(uuid()) @db.Uuid
+  slug        String       @unique @db.VarChar(100)
+  name        String       @db.VarChar(150)
+  description String?      @db.Text
+  coverImage  String?      @map("cover_image") @db.VarChar(512)
+  logo        String?      @db.VarChar(512)
+  status      EntityStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+  deletedAt   DateTime?    @map("deleted_at") @db.Timestamptz()
+
+  teams   Team[]
+  players Player[]
+  votes   Vote[]
+
+  @@map("games")
+}
+
+model Team {
+  id          String       @id @default(uuid()) @db.Uuid
+  gameId      String       @map("game_id") @db.Uuid
+  slug        String       @unique @db.VarChar(100)
+  name        String       @db.VarChar(150)
+  logo        String?      @db.VarChar(512)
+  description String?      @db.Text
+  country     String?      @db.VarChar(100)
+  status      EntityStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+  deletedAt   DateTime?    @map("deleted_at") @db.Timestamptz()
+
+  game    Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  players Player[]
+  votes   Vote[]
+
+  @@map("teams")
+}
+
+model Player {
+  id        String       @id @default(uuid()) @db.Uuid
+  teamId    String       @map("team_id") @db.Uuid
+  gameId    String       @map("game_id") @db.Uuid
+  nickname  String       @db.VarChar(100)
+  fullName  String?      @map("full_name") @db.VarChar(150)
+  avatar    String?      @db.VarChar(512)
+  role      String?      @db.VarChar(100)
+  country   String?      @db.VarChar(100)
+  biography String?      @db.Text
+  status    EntityStatus @default(ACTIVE)
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+  deletedAt DateTime?    @map("deleted_at") @db.Timestamptz()
+
+  team        Team               @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  game        Game               @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  votes       Vote[]
+  voteSummary PlayerVoteSummary?
+
+  @@map("players")
+}
+
+model Vote {
+  id          String     @default(uuid()) @db.Uuid
+  playerId    String     @map("player_id") @db.Uuid
+  teamId      String     @map("team_id") @db.Uuid
+  gameId      String     @map("game_id") @db.Uuid
+  userId      String?    @map("user_id") @db.Uuid
+  ipHash      String     @map("ip_hash") @db.Char(64)
+  deviceHash  String     @map("device_hash") @db.Char(64)
+  sessionHash String     @map("session_hash") @db.Char(64)
+  source      VoteSource @default(WEB)
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@id([id, createdAt])
+  @@map("votes")
+}
+
+model PlayerVoteSummary {
+  playerId    String   @id @map("player_id") @db.Uuid
+  totalVote   BigInt   @default(0) @map("total_vote")
+  dailyVote   BigInt   @default(0) @map("daily_vote")
+  weeklyVote  BigInt   @default(0) @map("weekly_vote")
+  monthlyVote BigInt   @default(0) @map("monthly_vote")
+  yearlyVote  BigInt   @default(0) @map("yearly_vote")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@map("player_vote_summary")
+}
+
+model Admin {
+  id           String       @id @default(uuid()) @db.Uuid
+  email        String       @unique @db.VarChar(255)
+  passwordHash String       @map("password_hash") @db.VarChar(255)
+  role         AdminRole    @default(MODERATOR)
+  status       EntityStatus @default(ACTIVE)
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+  deletedAt    DateTime?    @map("deleted_at") @db.Timestamptz()
+
+  auditLogs AuditLog[]
+
+  @@map("admins")
+}
+
+model AuditLog {
+  id           String      @id @default(uuid()) @db.Uuid
+  adminId      String      @map("admin_id") @db.Uuid
+  action       AuditAction
+  targetEntity String      @map("target_entity") @db.VarChar(100)
+  targetId     String?     @map("target_id") @db.Uuid
+  metadata     Json?       @default("{}")
+  ipAddress    String?     @map("ip_address") @db.VarChar(45)
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz()
+
+  admin Admin @relation(fields: [adminId], references: [id], onDelete: Restrict)
+
+  @@map("audit_logs")
 }
