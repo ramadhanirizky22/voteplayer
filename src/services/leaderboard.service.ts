@@ -3,12 +3,55 @@ import { LeaderboardQueryInput } from '@/schemas/leaderboard.schema';
 import { LeaderboardItem } from '@/types';
 
 export class LeaderboardService {
+  private static isViewVerified = false;
+
+  private async ensureViewExists() {
+    if (LeaderboardService.isViewVerified) return;
+
+    try {
+      const createViewSql = `
+        CREATE OR REPLACE VIEW v_leaderboard_detail AS
+        SELECT 
+            p.id AS player_id,
+            p.nickname,
+            p.full_name,
+            p.avatar,
+            p.role AS player_role,
+            p.country AS player_country,
+            t.id AS team_id,
+            t.name AS team_name,
+            t.slug AS team_slug,
+            t.logo AS team_logo,
+            g.id AS game_id,
+            g.name AS game_name,
+            g.slug AS game_slug,
+            COALESCE(s.total_vote, 0) AS total_vote,
+            COALESCE(s.daily_vote, 0) AS daily_vote,
+            COALESCE(s.weekly_vote, 0) AS weekly_vote,
+            COALESCE(s.monthly_vote, 0) AS monthly_vote,
+            COALESCE(s.yearly_vote, 0) AS yearly_vote,
+            COALESCE(s.updated_at, p.created_at) AS last_voted_at
+        FROM players p
+        JOIN teams t ON p.team_id = t.id
+        JOIN games g ON p.game_id = g.id
+        LEFT JOIN player_vote_summary s ON p.id = s.player_id
+        WHERE p.deleted_at IS NULL AND p.status = 'ACTIVE';
+      `;
+      await db.$executeRawUnsafe(createViewSql);
+      LeaderboardService.isViewVerified = true;
+    } catch (err) {
+      console.error('[LEADERBOARD_VIEW_INIT_ERROR]:', err);
+    }
+  }
+
   async getLeaderboard(query: LeaderboardQueryInput): Promise<{
     items: LeaderboardItem[];
     total: number;
     page: number;
     limit: number;
   }> {
+    await this.ensureViewExists();
+
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
     const offset = (page - 1) * limit;

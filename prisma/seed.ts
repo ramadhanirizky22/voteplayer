@@ -3,8 +3,45 @@ import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
+export async function ensureDatabaseViewsExist(db: PrismaClient) {
+  // Ensure custom PostgreSQL View v_leaderboard_detail exists
+  const createViewSql = `
+    CREATE OR REPLACE VIEW v_leaderboard_detail AS
+    SELECT 
+        p.id AS player_id,
+        p.nickname,
+        p.full_name,
+        p.avatar,
+        p.role AS player_role,
+        p.country AS player_country,
+        t.id AS team_id,
+        t.name AS team_name,
+        t.slug AS team_slug,
+        t.logo AS team_logo,
+        g.id AS game_id,
+        g.name AS game_name,
+        g.slug AS game_slug,
+        COALESCE(s.total_vote, 0) AS total_vote,
+        COALESCE(s.daily_vote, 0) AS daily_vote,
+        COALESCE(s.weekly_vote, 0) AS weekly_vote,
+        COALESCE(s.monthly_vote, 0) AS monthly_vote,
+        COALESCE(s.yearly_vote, 0) AS yearly_vote,
+        COALESCE(s.updated_at, p.created_at) AS last_voted_at
+    FROM players p
+    JOIN teams t ON p.team_id = t.id
+    JOIN games g ON p.game_id = g.id
+    LEFT JOIN player_vote_summary s ON p.id = s.player_id
+    WHERE p.deleted_at IS NULL AND p.status = 'ACTIVE';
+  `;
+  await db.$executeRawUnsafe(createViewSql);
+  console.log('✅ PostgreSQL View v_leaderboard_detail verified.');
+}
+
 async function main() {
   console.log('🌱 Starting Enterprise Seeder for Vote Player Game Database...');
+
+  // Ensure DB Views & Triggers exist
+  await ensureDatabaseViewsExist(prisma);
 
   // 1. Seed Default Admin User
   const adminPasswordHash = crypto.createHash('sha256').update('Admin123!Secure').digest('hex');
@@ -28,8 +65,8 @@ async function main() {
       slug: 'mobile-legends',
       name: 'Mobile Legends: Bang Bang',
       description: 'Multiplayer Online Battle Arena (MOBA) game by Moonton.',
-      coverImage: 'https://cdn.nevacloud.io/voteplay-assets/covers/mlbb-cover.webp',
-      logo: 'https://cdn.nevacloud.io/voteplay-assets/logos/mlbb-logo.webp',
+      coverImage: 'https://cdn.nevacloud.io/esarizky/covers/mlbb-cover.webp',
+      logo: 'https://cdn.nevacloud.io/esarizky/logos/mlbb-logo.webp',
       status: EntityStatus.ACTIVE,
     },
   });
@@ -41,8 +78,8 @@ async function main() {
       slug: 'valorant',
       name: 'VALORANT',
       description: '5v5 character-based tactical FPS game by Riot Games.',
-      coverImage: 'https://cdn.nevacloud.io/voteplay-assets/covers/valorant-cover.webp',
-      logo: 'https://cdn.nevacloud.io/voteplay-assets/logos/valorant-logo.webp',
+      coverImage: 'https://cdn.nevacloud.io/esarizky/covers/valorant-cover.webp',
+      logo: 'https://cdn.nevacloud.io/esarizky/logos/valorant-logo.webp',
       status: EntityStatus.ACTIVE,
     },
   });
@@ -59,7 +96,7 @@ async function main() {
       name: 'ONIC Esports',
       country: 'Indonesia',
       description: 'Dominant Indonesian Mobile Legends professional team.',
-      logo: 'https://cdn.nevacloud.io/voteplay-assets/logos/onic.webp',
+      logo: 'https://cdn.nevacloud.io/esarizky/logos/onic.webp',
       status: EntityStatus.ACTIVE,
     },
   });
@@ -73,7 +110,7 @@ async function main() {
       name: 'Rex Regum Qeon (RRQ)',
       country: 'Indonesia',
       description: 'The Kings of Kings e-sports organization.',
-      logo: 'https://cdn.nevacloud.io/voteplay-assets/logos/rrq.webp',
+      logo: 'https://cdn.nevacloud.io/esarizky/logos/rrq.webp',
       status: EntityStatus.ACTIVE,
     },
   });
@@ -87,7 +124,7 @@ async function main() {
       name: 'Paper Rex',
       country: 'Singapore',
       description: 'Aggressive VCT Pacific Valorant contender.',
-      logo: 'https://cdn.nevacloud.io/voteplay-assets/logos/prx.webp',
+      logo: 'https://cdn.nevacloud.io/esarizky/logos/prx.webp',
       status: EntityStatus.ACTIVE,
     },
   });
@@ -95,43 +132,52 @@ async function main() {
   console.log(`✅ Teams seeded: ${teamOnic.name}, ${teamRrq.name}, ${teamPrx.name}`);
 
   // 4. Seed Players
-  const playerKiboy = await prisma.player.create({
-    data: {
+  const playerKiboy = await prisma.player.upsert({
+    where: { id: '11111111-1111-1111-1111-111111111111' },
+    update: {},
+    create: {
+      id: '11111111-1111-1111-1111-111111111111',
       gameId: gameMobileLegends.id,
       teamId: teamOnic.id,
       nickname: 'Kiboy',
       fullName: 'Nicky Fernando',
       role: 'Roamer',
       country: 'Indonesia',
-      avatar: 'https://cdn.nevacloud.io/voteplay-assets/avatars/kiboy.webp',
+      avatar: 'https://cdn.nevacloud.io/esarizky/avatars/kiboy.webp',
       biography: 'MVP Roamer known for aggressive initiator plays.',
       status: EntityStatus.ACTIVE,
     },
   });
 
-  const playerAlberttt = await prisma.player.create({
-    data: {
+  const playerAlberttt = await prisma.player.upsert({
+    where: { id: '22222222-2222-2222-2222-222222222222' },
+    update: {},
+    create: {
+      id: '22222222-2222-2222-2222-222222222222',
       gameId: gameMobileLegends.id,
       teamId: teamOnic.id,
       nickname: 'Alberttt',
       fullName: 'Albert Neilsen Iskandar',
       role: 'Jungler',
       country: 'Indonesia',
-      avatar: 'https://cdn.nevacloud.io/voteplay-assets/avatars/alberttt.webp',
+      avatar: 'https://cdn.nevacloud.io/esarizky/avatars/alberttt.webp',
       biography: 'Baby Assassin, premier Ling and Lancelot player.',
       status: EntityStatus.ACTIVE,
     },
   });
 
-  const playerForsaken = await prisma.player.create({
-    data: {
+  const playerForsaken = await prisma.player.upsert({
+    where: { id: '33333333-3333-3333-3333-333333333333' },
+    update: {},
+    create: {
+      id: '33333333-3333-3333-3333-333333333333',
       gameId: gameValorant.id,
       teamId: teamPrx.id,
       nickname: 'f0rsakeN',
       fullName: 'Jason Susanto',
       role: 'Flex / Duelist',
       country: 'Indonesia',
-      avatar: 'https://cdn.nevacloud.io/voteplay-assets/avatars/forsaken.webp',
+      avatar: 'https://cdn.nevacloud.io/esarizky/avatars/forsaken.webp',
       biography: 'VCT Pacific superstar known for Yoru and Jett plays.',
       status: EntityStatus.ACTIVE,
     },
