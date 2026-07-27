@@ -69,9 +69,9 @@ describe('LeaderboardService Unit Tests', () => {
 
     expect(result.total).toBe(2);
     expect(result.items.length).toBe(2);
-    expect(result.items[0].rank).toBe(1);
-    expect(result.items[1].rank).toBe(2);
-    expect(result.items[0].nickname).toBe('f0rsakeN');
+    expect(result.items[0]!.rank).toBe(1);
+    expect(result.items[1]!.rank).toBe(2);
+    expect(result.items[0]!.nickname).toBe('f0rsakeN');
   });
 
   it('should filter leaderboard by gameSlug when provided', async () => {
@@ -87,6 +87,6 @@ describe('LeaderboardService Unit Tests', () => {
     });
 
     expect(result.total).toBe(1);
-    expect(result.items[0].gameSlug).toBe('valorant');
+    expect(result.items[0]!.gameSlug).toBe('valorant');
   });
 });
