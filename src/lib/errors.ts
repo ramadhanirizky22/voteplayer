@@ -4,13 +4,11 @@ export abstract class AppError extends Error {
 
   constructor(
     message: string,
-    public readonly details: Record<string, unknown> = {},
+    public readonly details: Record<string, unknown> = {}
   ) {
     super(message);
     Object.setPrototypeOf(this, new.target.prototype);
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
+    Error.captureStackTrace(this, this.constructor);
   }
 }
 

@@ -1,11 +1,21 @@
-export const APP_CONFIG = {
-  NAME: 'VotePlay',
-  DESCRIPTION: 'Production-Grade Next.js Boilerplate',
-  DEFAULT_PAGE_LIMIT: 10,
-  MAX_PAGE_LIMIT: 100,
-} as const;
-
-export const ROLES = {
-  ADMIN: 'ADMIN',
-  USER: 'USER',
+export const APP_CONSTANTS = {
+  PAGINATION: {
+    DEFAULT_PAGE: 1,
+    DEFAULT_LIMIT: 10,
+    MAX_LIMIT: 100,
+  },
+  VOTE: {
+    DEVICE_COOLDOWN_SECONDS: 60,
+    IP_RATE_LIMIT_WINDOW_SECONDS: 600,
+    IP_MAX_VOTES_PER_WINDOW: 10,
+    SESSION_TOKEN_TTL_SECONDS: 300,
+  },
+  ROLES: {
+    SUPER_ADMIN: 'SUPER_ADMIN',
+    MODERATOR: 'MODERATOR',
+    ANALYST: 'ANALYST',
+  },
+  CACHE: {
+    DEFAULT_STALE_TIME_MS: 5 * 60 * 1000, // 5 minutes
+  },
 } as const;

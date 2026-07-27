@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { authGuardMiddleware } from '@/middleware/auth-guard';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // Only apply to API routes
   if (request.nextUrl.pathname.startsWith('/api/')) {
     // Handle CORS Preflight Options Request
@@ -15,6 +16,9 @@ export function middleware(request: NextRequest) {
         },
       });
     }
+
+    const authGuardResponse = authGuardMiddleware(request);
+    if (authGuardResponse) return authGuardResponse;
 
     const response = NextResponse.next();
 
