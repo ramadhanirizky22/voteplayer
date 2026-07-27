@@ -17,12 +17,63 @@ import {
   Flame,
 } from 'lucide-react';
 
+export interface AdminGameItem {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  logo?: string | null;
+  coverImage?: string | null;
+  status: string;
+}
+
+export interface AdminTeamItem {
+  id: string;
+  gameId: string;
+  name: string;
+  slug: string;
+  country?: string | null;
+  logo?: string | null;
+  game?: { name: string; slug: string } | null;
+}
+
+export interface AdminPlayerItem {
+  id: string;
+  gameId: string;
+  teamId: string;
+  nickname: string;
+  fullName?: string | null;
+  role?: string | null;
+  country?: string | null;
+  avatar?: string | null;
+  status: string;
+  totalVotes?: number;
+  team?: { name: string; slug: string } | null;
+  game?: { name: string; slug: string } | null;
+}
+
+export interface AdminLeaderboardEntry {
+  playerId: string;
+  nickname: string;
+  teamName: string;
+  gameName: string;
+  totalVote: number | bigint;
+}
+
+export interface AdminStatsData {
+  totalGames: number;
+  totalTeams: number;
+  totalPlayers: number;
+  totalVotes: number;
+  popularPlayer?: { nickname: string; votes: number } | null;
+}
+
 interface AdminDashboardClientProps {
-  stats: any;
-  games: any[];
-  teams: any[];
-  players: any[];
-  leaderboard: any[];
+  stats: AdminStatsData;
+  games: AdminGameItem[];
+  teams: AdminTeamItem[];
+  players: AdminPlayerItem[];
+  leaderboard: AdminLeaderboardEntry[];
 }
 
 export default function AdminDashboardClient({
@@ -81,8 +132,8 @@ export default function AdminDashboardClient({
       setShowAddGameModal(false);
       setGameForm({ name: '', slug: '', description: '', logo: '', coverImage: '' });
       window.location.reload();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert((err as Error).message);
     }
   };
 
@@ -100,8 +151,8 @@ export default function AdminDashboardClient({
       setShowAddTeamModal(false);
       setTeamForm({ gameId: initialGames[0]?.id || '', name: '', slug: '', country: 'Indonesia', logo: '' });
       window.location.reload();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert((err as Error).message);
     }
   };
 
@@ -127,8 +178,8 @@ export default function AdminDashboardClient({
         avatar: '',
       });
       window.location.reload();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert((err as Error).message);
     }
   };
 
