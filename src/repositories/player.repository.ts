@@ -2,8 +2,14 @@ import { db } from '@/lib/db';
 import { Player, EntityStatus } from '@prisma/client';
 import { CreatePlayerInput, UpdatePlayerInput } from '@/schemas/player.schema';
 
+export interface PlayerWithRelations extends Player {
+  team?: { id: string; name: string; slug: string; logo: string | null } | null;
+  game?: { id: string; name: string; slug: string; logo: string | null } | null;
+  voteSummary?: { totalVote: bigint } | null;
+}
+
 export interface PlayerRepositoryInterface {
-  findAll(filters?: { gameId?: string; teamId?: string; query?: string }): Promise<Player[]>;
+  findAll(filters?: { gameId?: string; teamId?: string; query?: string }): Promise<PlayerWithRelations[]>;
   findById(id: string): Promise<(Player & { team: { name: string; slug: string }; game: { name: string; slug: string }; totalVotes: number }) | null>;
   create(data: CreatePlayerInput): Promise<Player>;
   update(id: string, data: Partial<UpdatePlayerInput>): Promise<Player>;
@@ -11,7 +17,7 @@ export interface PlayerRepositoryInterface {
 }
 
 export class PlayerRepository implements PlayerRepositoryInterface {
-  async findAll(filters?: { gameId?: string; teamId?: string; query?: string }): Promise<Player[]> {
+  async findAll(filters?: { gameId?: string; teamId?: string; query?: string }): Promise<PlayerWithRelations[]> {
     return db.player.findMany({
       where: {
         deletedAt: null,

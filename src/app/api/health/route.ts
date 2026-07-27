@@ -10,7 +10,7 @@ export async function GET() {
     const dbPingStart = Date.now();
     await db.$queryRaw`SELECT 1;`;
     dbLatencyMs = Date.now() - dbPingStart;
-  } catch (_err) {
+  } catch {
     dbStatus = 'unhealthy';
   }
 
