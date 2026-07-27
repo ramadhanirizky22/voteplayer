@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 export interface LogContext {
   requestId?: string;
   userId?: string;
