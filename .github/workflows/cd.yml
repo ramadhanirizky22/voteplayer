@@ -1,4 +1,4 @@
-name: CD Pipeline
+name: CD Pipeline Deployment
 
 on:
   push:
@@ -6,14 +6,31 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to Production
+    name: Deploy to Production Environment
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout Code Repository
         uses: actions/checkout@v4
 
-      - name: Deploy to Vercel
+      - name: Install pnpm Package Manager
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Database Migration Verification
+        run: npx prisma generate
+
+      - name: Deploy to Vercel Production
         uses: amondnet/vercel-action@v25
         id: vercel-deploy
         with:
@@ -22,11 +39,11 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
 
-      - name: Health Check Post-Deploy
+      - name: Post-Deploy System Health Check Probe
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ steps.vercel-deploy.outputs.preview-url }}/api/health)
           if [ "$STATUS" -ne 200 ]; then
-            echo "Health check failed with status $STATUS"
+            echo "❌ Health check failed with status $STATUS"
             exit 1
           fi
-          echo "Health check passed successfully."
+          echo "✅ Health check passed successfully."
