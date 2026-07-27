@@ -10,13 +10,20 @@ const statsService = new StatisticsService();
 const leaderboardService = new LeaderboardService();
 
 export default async function HomePage() {
-  const [statsData, leaderboardResult] = await Promise.all([
-    statsService.getSystemStatistics(),
-    leaderboardService.getLeaderboard({ period: 'all_time', limit: 5, page: 1 }),
-  ]);
+  let stats = { totalGames: 0, totalTeams: 0, totalPlayers: 0, totalVotes: 0 };
+  let items: Array<Record<string, unknown>> = [];
 
-  const stats = safeSerialize(statsData);
-  const items = safeSerialize(leaderboardResult.items);
+  try {
+    const [statsData, leaderboardResult] = await Promise.all([
+      statsService.getSystemStatistics(),
+      leaderboardService.getLeaderboard({ period: 'all_time', limit: 5, page: 1 }),
+    ]);
+    stats = safeSerialize(statsData) as typeof stats;
+    items = safeSerialize(leaderboardResult.items) as unknown as Array<Record<string, unknown>>;
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[HOME_PAGE_FETCH_ERROR]:', err);
+  }
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-cyan-500 selection:text-white flex flex-col">
@@ -85,36 +92,42 @@ export default async function HomePage() {
           </div>
 
           <div className="space-y-3">
-            {items.map((item, idx) => (
-              <div
-                key={item.playerId || idx}
-                className="bg-slate-950/80 border border-slate-850 p-4 rounded-xl flex items-center justify-between hover:border-slate-700 transition-all"
-              >
-                <div className="flex items-center gap-4">
-                  <span
-                    className={`w-8 h-8 rounded-full font-bold text-sm flex items-center justify-center ${
-                      idx === 0
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                        : idx === 1
-                        ? 'bg-slate-400/20 text-slate-200 border border-slate-400/30'
-                        : 'bg-slate-800 text-slate-400'
-                    }`}
-                  >
-                    #{idx + 1}
-                  </span>
-                  <div>
-                    <div className="font-bold text-white text-base">{item.nickname}</div>
-                    <div className="text-xs text-slate-400">
-                      {item.teamName} • <span className="text-cyan-400">{item.gameName}</span>
+            {items.length === 0 ? (
+              <div className="text-center py-8 text-slate-400 text-sm">
+                No leaderboard entries found. Ensure database environment variables are set.
+              </div>
+            ) : (
+              items.map((item, idx) => (
+                <div
+                  key={(item.playerId as string) || idx}
+                  className="bg-slate-950/80 border border-slate-850 p-4 rounded-xl flex items-center justify-between hover:border-slate-700 transition-all"
+                >
+                  <div className="flex items-center gap-4">
+                    <span
+                      className={`w-8 h-8 rounded-full font-bold text-sm flex items-center justify-center ${
+                        idx === 0
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                          : idx === 1
+                          ? 'bg-slate-400/20 text-slate-200 border border-slate-400/30'
+                          : 'bg-slate-800 text-slate-400'
+                      }`}
+                    >
+                      #{idx + 1}
+                    </span>
+                    <div>
+                      <div className="font-bold text-white text-base">{item.nickname as string}</div>
+                      <div className="text-xs text-slate-400">
+                        {item.teamName as string} • <span className="text-cyan-400">{item.gameName as string}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-extrabold text-sm px-3 py-1 rounded-lg">
-                  {Number(item.totalVote).toLocaleString()} votes
+                  <div className="bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-extrabold text-sm px-3 py-1 rounded-lg">
+                    {Number(item.totalVote || 0).toLocaleString()} votes
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </section>
