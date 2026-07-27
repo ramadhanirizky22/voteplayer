@@ -119,12 +119,20 @@ export default function AdminDashboardClient({
     setTimeout(() => setActionMessage(null), 4000);
   };
 
+  const getAuthHeaders = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') || 'mock-admin-token' : 'mock-admin-token';
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    };
+  };
+
   const handleCreateGame = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const res = await fetch('/api/admin/game', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(gameForm),
       });
       const json = await res.json();
@@ -143,7 +151,7 @@ export default function AdminDashboardClient({
     try {
       const res = await fetch('/api/admin/team', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(teamForm),
       });
       const json = await res.json();
@@ -162,7 +170,7 @@ export default function AdminDashboardClient({
     try {
       const res = await fetch('/api/admin/player', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(playerForm),
       });
       const json = await res.json();
