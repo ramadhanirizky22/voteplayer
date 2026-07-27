@@ -4,6 +4,7 @@ import { TeamRepository } from '@/repositories/team.repository';
 import { PlayerRepository } from '@/repositories/player.repository';
 import { StatisticsService } from '@/services/statistics.service';
 import { LeaderboardService } from '@/services/leaderboard.service';
+import { safeSerialize } from '@/utils/json-serializer';
 import AdminDashboardClient from './admin-dashboard-client';
 
 export const revalidate = 0;
@@ -30,11 +31,11 @@ export default async function AdminPage() {
 
   return (
     <AdminDashboardClient
-      stats={stats}
-      games={games}
-      teams={teams}
-      players={players}
-      leaderboard={leaderboardResult.items}
+      stats={safeSerialize(stats)}
+      games={safeSerialize(games)}
+      teams={safeSerialize(teams)}
+      players={safeSerialize(players)}
+      leaderboard={safeSerialize(leaderboardResult.items)}
     />
   );
 }

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Trophy, LayoutDashboard, Vote } from 'lucide-react';
 import { StatisticsService } from '@/services/statistics.service';
 import { LeaderboardService } from '@/services/leaderboard.service';
+import { safeSerialize } from '@/utils/json-serializer';
 
 export const revalidate = 0;
 
@@ -9,10 +10,13 @@ const statsService = new StatisticsService();
 const leaderboardService = new LeaderboardService();
 
 export default async function HomePage() {
-  const [stats, leaderboardResult] = await Promise.all([
+  const [statsData, leaderboardResult] = await Promise.all([
     statsService.getSystemStatistics(),
     leaderboardService.getLeaderboard({ period: 'all_time', limit: 5, page: 1 }),
   ]);
+
+  const stats = safeSerialize(statsData);
+  const items = safeSerialize(leaderboardResult.items);
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-cyan-500 selection:text-white flex flex-col">
@@ -81,7 +85,7 @@ export default async function HomePage() {
           </div>
 
           <div className="space-y-3">
-            {leaderboardResult.items.map((item, idx) => (
+            {items.map((item, idx) => (
               <div
                 key={item.playerId || idx}
                 className="bg-slate-950/80 border border-slate-850 p-4 rounded-xl flex items-center justify-between hover:border-slate-700 transition-all"
