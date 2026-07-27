@@ -1,24 +1,26 @@
-name: CI Pipeline
+name: Next.js Production Architecture CI/CD Pipeline
 
 on:
+  push:
+    branches: [ main, master, develop ]
   pull_request:
-    branches: [main, staging]
+    branches: [ main, master, develop ]
 
 jobs:
-  validate:
-    name: Lint, Typecheck & Test
+  build-and-test:
+    name: Build, Lint & Automated Tests
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout Code Repository
         uses: actions/checkout@v4
 
-      - name: Install pnpm
+      - name: Install pnpm Package Manager
         uses: pnpm/action-setup@v3
         with:
-          version: 9
+          version: 10
 
-      - name: Setup Node.js
+      - name: Setup Node.js Environment
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -27,22 +29,23 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Type Check
-        run: pnpm typecheck
+      - name: Generate Prisma Client
+        run: npx prisma generate
 
-      - name: Lint Check
-        run: pnpm lint
+      - name: Run ESLint Verification
+        run: pnpm run lint
 
-      - name: Format Check
-        run: pnpm format:check
+      - name: Run TypeScript Strict Type Check
+        run: pnpm run typecheck
 
-      - name: Run Unit & Integration Tests
-        run: pnpm test:coverage
+      - name: Run Vitest Unit & Integration Tests
+        run: pnpm run test
 
-      - name: Build Dry-Run
-        run: pnpm build
+      - name: Validate Next.js Production Build
+        run: pnpm run build
         env:
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/db_test"
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/voteplay?pgbouncer=true"
+          DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/voteplay"
           API_SECRET_KEY: "01234567890123456789012345678901"
           REDIS_URL: "redis://localhost:6379"
           NEXT_PUBLIC_APP_URL: "http://localhost:3000"
